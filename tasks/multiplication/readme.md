@@ -76,6 +76,18 @@ make test_multiplication
 
 Обратите внимание, что компилятор MSVC может давать иные предупреждения/ошибки компиляции, чем те, которые вы можете получить на сервере, где используется clang.
 
+##### Windows + WSL
+
+Полноценный вариант использования Linux на Windows с минимальными усилиями (полная инструкция https://learn.microsoft.com/ru-ru/windows/wsl/install):
+
+0. (Рекомендуется, но необязательно) Установить [Windows Terminal](https://www.microsoft.com/store/apps/9n0dx20hk701), чтобы красиво пользоваться терминалом на Windows.
+1. Открыть PowerShell в режиме администратора и выполнить `wsl --install`, перезапустить компьютер.
+2. Открыть PowerShell и выполнить `wsl --install -d Ubuntu-20.04`.
+3. Запустить Ubuntu-20.04 ([все способы](https://learn.microsoft.com/ru-ru/windows/wsl/install#ways-to-run-multiple-linux-distributions-with-wsl)).
+4. Если вы используете VSCode, то он автоматически предложит использовать WSL (также имеется [инструкция](https://www.jetbrains.com/help/clion/how-to-use-wsl-development-environment-in-product.html#wsl-tooclhain) для CLion).
+
+Далее следует следовать всем инструкциям для Linux.
+
 ### Замечания
 
 Обратите внимание на модульность, возможно это в первый раз, когда вы пишете
