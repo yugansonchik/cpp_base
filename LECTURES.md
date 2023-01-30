@@ -61,3 +61,15 @@
   - `strcmp`, `strncmp`
 - `std::string`
 - `std::string_view`
+
+### Лекция 6 - 27.01.2023
+
+- Структуры
+  - Инициализация структур
+  - `std::pair`, `std::tuple`
+  - `std::tie`
+  - Structured binding
+- Последовательные контейнеры
+  - `std::vector`
+  - `std::array`
+  - Итераторы и range-based for
