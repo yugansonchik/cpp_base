@@ -27,5 +27,5 @@ deploy:
   stage: test
   script:
   - docker pull cr.yandex/crpkun66rq02t8mpkpa4/cpp-course-build-14
-  - docker build -f testenv.docker -t cr.yandex/crpkun66rq02t8mpkpa4/cpp-course-14-beta .
-  - docker push cr.yandex/crpkun66rq02t8mpkpa4/cpp-course-14-beta:latest
+  - docker build -f testenv.docker -t cr.yandex/crpkun66rq02t8mpkpa4/cpp-course-beta .
+  - docker push cr.yandex/crpkun66rq02t8mpkpa4/cpp-course-beta:latest
