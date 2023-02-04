@@ -1,5 +1,5 @@
 grade:
-  image: cr.yandex/crpkun66rq02t8mpkpa4/cpp-course-14
+  image: cr.yandex/crpkun66rq02t8mpkpa4/cpp-course
   only:
     - /^submits/.*$/
   script:
