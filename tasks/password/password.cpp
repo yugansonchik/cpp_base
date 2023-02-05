@@ -36,9 +36,4 @@ bool ValidatePassword(const std::string& password) {
     return digit + upper + lower + other >= 3;
 }
 
-int main() {
-    std::string password = "";
-    std::getline(std::cin, password);
-    std::cout << ValidatePassword(password) << "\n";
-    return 0;
-}
+
