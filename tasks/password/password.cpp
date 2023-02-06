@@ -8,8 +8,7 @@ const int32_t MAX_LENGTH = 14;
 const int32_t MIN_ASCII = 33;
 const int32_t MAX_ASCII = 126;
 bool ValidatePassword(const std::string& password) {
-    int len_of_password = password.length();
-    if (len_of_password < MIN_LENGTH || password.size() > MAX_LENGTH) {
+    if (password.size() < MIN_LENGTH || password.size() > MAX_LENGTH) {
         return false;
     }
     bool digit = false;
