@@ -2,9 +2,7 @@
 #include <tuple>
 
 bool CompareDates(const Date& left, const Date& right) {
-    return (left.year < right.year)
-           && (left.month < right.month)
-           && (left.day < right.day);
+    return std::tie(left.year, left.month, left.day) < std::tie(right.year, right.month, right.day);
     }
 bool ComparatorByName(const Student& left, const Student& right){
     if (std::tie(left.last_name, left.name) == std::tie(right.last_name, right.name)){
@@ -20,8 +18,8 @@ bool ComporatorByDate(const Student& left, const Student& right) {
     }
     return CompareDates(left.birth_date, right.birth_date);
 }
-void SortStudents(std::vector<Student>& students, SortKind sortKind) {
-    switch (sortKind) {
+void SortStudents(std::vector<Student>& students, SortKind sort_kind) {
+    switch (sort_kind) {
         case SortKind::Date:
             return std::sort(students.begin(), students.end(), ComporatorByDate);
         case SortKind::Name:
