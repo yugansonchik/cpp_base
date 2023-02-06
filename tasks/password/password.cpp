@@ -26,7 +26,7 @@ bool ValidatePassword(const std::string& password) {
         } else if (std::islower(p) && !lower) {
             lower = true;
         } else {
-            other = 1;
+            other = true;
         }
     }
     return digit + upper + lower + other >= 3;
