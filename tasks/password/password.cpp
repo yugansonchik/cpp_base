@@ -20,11 +20,11 @@ bool ValidatePassword(const std::string& password) {
     for (char p : password) {
         if (p < min_ascii || p > max_ascii) {
             return false;
-        } else if (std::isdigit(p) && !digit) {
+        } else if (std::isdigit(p)) {
             digit = 1;
-        } else if (std::isupper(p) && !upper) {
+        } else if (std::isupper(p)) {
             upper = 1;
-        } else if (std::islower(p) && !lower) {
+        } else if (std::islower(p)) {
             lower = 1;
         } else {
             other = 1;
