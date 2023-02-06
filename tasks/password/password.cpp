@@ -31,5 +31,3 @@ bool ValidatePassword(const std::string& password) {
     }
     return digit + upper + lower + other >= 3;
 }
-
-
