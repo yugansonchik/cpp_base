@@ -35,7 +35,7 @@ std::string NormalizePath(std::string_view current_working_dir, std::string_view
             additional_vector.push_back(current_dir);
         }
     }
-    for (const auto& i : additional_vector) {
+    for (const auto &i : additional_vector) {
         answer += "/" + i;
     }
     if (answer.empty()) {
