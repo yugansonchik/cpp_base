@@ -41,8 +41,8 @@ ScoreTable GetScoredStudents(const Events& events, time_t score_time) {
                 break;
         }
     }
-    for (const auto &student : students_tasks_status) {
-        for (const auto &task : student.second) {
+    for (const auto& student : students_tasks_status) {
+        for (const auto& task : student.second) {
             if (task.second.merge_closed && task.second.check_success) {
                 score_table[student.first].insert(task.first);
             }
