@@ -2,7 +2,7 @@
 #include <unordered_map>
 
 bool CompareTime(const Event* event_1, const Event* event_2) {
-    return std::tie(event_1->time) <= std::tie(event_2->time);
+    return event_1->time < event_2->time;
 }
 
 struct TaskStatus {
