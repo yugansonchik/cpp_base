@@ -1,4 +1,6 @@
 #include "search.h"
+#include <cctype>
+#include <string_view>
 #include <cmath>
 #include <map>
 #include <tuple>
