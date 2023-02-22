@@ -1,5 +1,6 @@
 #include "search.h"
 #include <cctype>
+#include <string>
 #include <string_view>
 #include <cmath>
 #include <map>
