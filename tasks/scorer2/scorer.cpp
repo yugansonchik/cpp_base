@@ -22,12 +22,12 @@ void Scorer::OnCheckSuccess(const StudentName& student_name, const TaskName& tas
 }
 
 void Scorer::OnMergeRequestOpen(const StudentName& student_name, const TaskName& task_name) {
-    student_task_[student_name][task_name].merge_closed = true;
+    student_task_[student_name][task_name].merge_closed = false;
     AddToScoreTable(student_name, task_name);
 }
 
 void Scorer::OnMergeRequestClosed(const StudentName& student_name, const TaskName& task_name) {
-    student_task_[student_name][task_name].merge_closed = false;
+    student_task_[student_name][task_name].merge_closed = true;
     AddToScoreTable(student_name, task_name);
 }
 
