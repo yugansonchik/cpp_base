@@ -6,7 +6,7 @@ void Scorer::AddToScoreTable(const StudentName& student_name, const TaskName& ta
         if (score_table_[student_name].empty()) {
             score_table_.erase(student_name);
         }
-    }   else {
+    } else {
         score_table_[student_name].insert(task_name);
     }
 }
