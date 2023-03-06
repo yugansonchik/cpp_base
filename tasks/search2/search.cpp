@@ -32,7 +32,7 @@ std::vector<std::string_view> SearchEngine::Search(std::string_view query, size_
     };
 
     const auto get_tf_idf = [&](const std::vector<std::pair<size_t, size_t>>& row,
-                                                                 const std::set<std::string>& words) -> double {
+                                const std::set<std::string>& words) -> double {
         size_t words_count = row.size();
         double sum_of_tf_idf = 0;
         for (const auto& [start, end] : row) {
@@ -45,9 +45,9 @@ std::vector<std::string_view> SearchEngine::Search(std::string_view query, size_
         for (const auto& word : words) {
             if (row_words_local_counter[word] > 0 && word_rows_total_counter[word] > 0) {
                 double tf = static_cast<double>(row_words_local_counter[word]) /
-                                                         static_cast<double>(static_cast<float>(words_count));
+                            static_cast<double>(static_cast<float>(words_count));
                 double idf = std::log(static_cast<double>(words_indexes_.size()) /
-                                                                             static_cast<double>(word_rows_total_counter[word]));
+                                      static_cast<double>(word_rows_total_counter[word]));
                 sum_of_tf_idf += tf * idf;
                 row_words_local_counter[word] = 0;
             }

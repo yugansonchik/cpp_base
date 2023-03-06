@@ -11,7 +11,6 @@ struct Row {
     size_t length;
 
     Row(double rel, size_t idx, size_t len) : relevance(rel), begin_index(idx), length(len) {
-
     }
 
     bool operator<(const Row& row_2) const {
