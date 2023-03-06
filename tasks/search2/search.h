@@ -5,13 +5,14 @@
 #include "set"
 #include "unordered_map"
 
-
 struct Row {
     double relevance;
     size_t begin_index;
     size_t length;
 
-    Row(double rel, size_t idx, size_t len) : relevance(rel), begin_index(idx), length(len) {}
+    Row(double rel, size_t idx, size_t len) : relevance(rel), begin_index(idx), length(len) {
+
+    }
 
     bool operator<(const Row& row_2) const {
         return relevance > row_2.relevance;
