@@ -1,116 +1,108 @@
 #include "search.h"
-#include "math.h"
-#include <cctype>
-#include <string>
+#include <iostream>
+#include <cmath>
+#include <tuple>
 
-std::vector<std::string_view> SearchEngine::Search(std::string_view query, size_t results_count) const {
-    if (!build_called_) {
-        return {};
+std::string GetLowercase(const std::string_view s) {
+    std::string lowercase_string;
+    for (const char c : s) {
+        lowercase_string += static_cast<char>(std::tolower(c));
+    }
+    return lowercase_string;
+}
+
+size_t CaseInsensitiveStringHash::operator()(const std::string_view input) const {
+    std::hash<std::string> hash;
+    auto lowercase_string = GetLowercase(input);
+    return hash(lowercase_string);
+}
+
+bool CaseInsensitiveStringComparator::operator()(const std::string_view str1, const std::string_view str2) const {
+    if (str1.size() != str2.size()) {
+        return false;
     }
 
-    std::vector<std::string_view> found_rows;
-    std::string buffer;
-    std::set<std::string> unique_words;
-    std::unordered_map<std::string, size_t> row_words_local_counter;
-    std::unordered_map<std::string, size_t> word_rows_total_counter;
-
-    for (const auto& letter : query) {
-        if (std::isalpha(letter)) {
-            buffer.push_back(static_cast<char>(std::tolower(letter)));
-        } else if (!buffer.empty()) {
-            unique_words.insert(buffer);
-            buffer.clear();
+    for (size_t i = 0; i < str1.size(); ++i) {
+        if (std::tolower(str1[i]) != std::tolower(str2[i])) {
+            return false;
         }
     }
-    if (!buffer.empty()) {
-        unique_words.insert(buffer);
-        buffer.clear();
-    }
+    return true;
+}
 
-    const auto get_word = [](std::string_view text, size_t start, size_t end) -> std::string {
-        return std::string(text.substr(start + 1, end - start - 1));
-    };
+std::vector<std::string_view> SearchEngine::Split(const std::string_view text, bool by_lines) const {
+    size_t lb = 0;
+    size_t rb = 0;
+    std::vector<std::string_view> result;
 
-    const auto get_tf_idf = [&](const std::vector<std::pair<size_t, size_t>>& row,
-                                const std::set<std::string>& words) -> double {
-        size_t words_count = row.size();
-        double sum_of_tf_idf = 0;
-        for (const auto& [start, end] : row) {
-            std::string word = get_word(text_, start, end);
-            std::transform(word.begin(), word.end(), word.begin(), ::tolower);
-            if (words.find(word) != words.end()) {
-                ++row_words_local_counter[word];
+    const auto text_size = text.size();
+    while (rb < text_size) {
+        const bool flag = by_lines ? (text[rb] == '\n') : (!std::isalpha(text[rb]));
+        if (flag) {
+            if (rb != lb) {
+                result.emplace_back(text.data() + lb, rb - lb);
             }
+            lb = rb + 1;
         }
-        for (const auto& word : words) {
-            if (row_words_local_counter[word] > 0 && word_rows_total_counter[word] > 0) {
-                double tf = static_cast<double>(row_words_local_counter[word]) /
-                            static_cast<double>(static_cast<float>(words_count));
-                double idf = std::log(static_cast<double>(words_indexes_.size()) /
-                                      static_cast<double>(word_rows_total_counter[word]));
-                sum_of_tf_idf += tf * idf;
-                row_words_local_counter[word] = 0;
-            }
-        }
-        return sum_of_tf_idf;
-    };
-
-    std::vector<Row> rows_relevance;
-    rows_relevance.reserve(words_indexes_.size());
-    for (size_t i = 0; i < words_indexes_.size(); ++i) {
-        auto& row = words_indexes_[i];
-        for (const auto& [start, end] : row) {
-            std::string word = get_word(text_, start, end);
-            std::transform(word.begin(), word.end(), word.begin(), ::tolower);
-            if (unique_words.find(word) != unique_words.end()) {
-                ++word_rows_total_counter[word];
-            }
-        }
-        double tf_idf = get_tf_idf(row, unique_words);
-        if (tf_idf > 0) {
-            rows_relevance.emplace_back(tf_idf, rows_ind_len_[i].first, rows_ind_len_[i].second);
-        }
+        rb++;
     }
 
-    std::stable_sort(rows_relevance.rbegin(), rows_relevance.rend());
-    found_rows.reserve(std::min(rows_relevance.size(), results_count));
-    for (size_t i = 0; i < std::min(rows_relevance.size(), results_count); ++i) {
-        found_rows.push_back(text_.substr(rows_relevance[i].begin_index, rows_relevance[i].length));
+    if (rb == text_size && lb != text_size) {
+        result.emplace_back(text.data() + lb, rb - lb);
     }
 
-    return found_rows;
+    return result;
 }
 
 void SearchEngine::BuildIndex(std::string_view text) {
-    build_called_ = true;
+    total_lines = 0;
+    word_info_.clear();
+    line_word_count_.clear();
+    inputLines = Split(text, true);
 
-    text_ = text;
-
-    // Clear the data structures used to store the index
-    words_indexes_.clear();
-    rows_ind_len_.clear();
-
-    // Initialize variables for tracking the current word and row
-    size_t word_start = 0;
-    size_t row_start = 0;
-
-    // Iterate over each character in the input text, looking for word and row boundaries
-    for (size_t i = 0; i <= text_.size(); ++i) {
-        if (i == text_.size() || !std::isalpha(text_[i])) {
-            // If we've found a word boundary, add the previous word to the current row
-            if (i > word_start) {
-                words_indexes_.back().emplace_back(word_start, i - word_start);
+    for (const auto& line : inputLines) {
+        line_word_count_.push_back(0);
+        for (const auto& word : Split(line, false)) {
+            line_word_count_[total_lines]++;
+            auto& word_info_ref = word_info_[word];
+            if (word_info_ref.amount_in_line[total_lines]++ == 0) {
+                word_info_ref.lines_count++;
             }
-            word_start = i;
+        }
+        total_lines++;
+    }
+}
 
-            // If we've found a row boundary, add the current row to the index
-            if (i == text_.size() || text_[i] == '\n') {
-                if (!words_indexes_.empty()) {
-                    rows_ind_len_.emplace_back(row_start, i - row_start + 1);
-                }
-                words_indexes_.emplace_back();
-                row_start = i + 1;
+std::vector<std::string_view> SearchEngine::Search(std::string_view query, size_t results_count) const {
+    std::unordered_set<std::string_view, CaseInsensitiveStringHash, CaseInsensitiveStringComparator> query_term_set;
+    std::vector<std::pair<double, size_t>> scored_lines(total_lines);
+    for (const auto& search_term : Split(query, false)) {
+        bool is_new_word = false;
+        std::tie(std::ignore, is_new_word) = query_term_set.emplace(search_term);
+        if (is_new_word) {
+            auto word_info_iter = word_info_.find(search_term);
+            for (size_t i = 0; i < total_lines; ++i) {
+                scored_lines[i].second = i;
+                auto amount_in_line_iter = word_info_iter->second.amount_in_line.find(i);
+                size_t amount_in_line = (amount_in_line_iter == word_info_iter->second.amount_in_line.end()) ? 0 : amount_in_line_iter->second;
+                double tf = static_cast<double>(amount_in_line) / static_cast<double>(line_word_count_[i]);
+                double idf = std::log(static_cast<double>(total_lines) / static_cast<double>(word_info_iter->second.lines_count));
+                scored_lines[i].first += tf * idf;
             }
         }
     }
+    std::sort(scored_lines.begin(), scored_lines.end(),
+              [](const std::pair<double, size_t>& a, const std::pair<double, size_t>& b) {
+                  return std::tuple(-a.first, a.second) < std::tuple(-b.first, b.second);
+              });
+
+    std::vector<std::string_view> substrings;
+    for (const auto& [relevanceScore, line_index] : scored_lines) {
+        if (substrings.size() == results_count || relevanceScore <= 0) {
+            break;
+        }
+        substrings.push_back(inputLines[line_index]);
+    }
+
+    return substrings;
 }
