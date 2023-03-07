@@ -84,9 +84,12 @@ std::vector<std::string_view> SearchEngine::Search(std::string_view query, size_
             for (size_t i = 0; i < total_lines; ++i) {
                 scored_lines[i].second = i;
                 auto amount_in_line_iter = word_info_iter->second.amount_in_line.find(i);
-                size_t amount_in_line = (amount_in_line_iter == word_info_iter->second.amount_in_line.end()) ? 0 : amount_in_line_iter->second;
+                size_t amount_in_line = (amount_in_line_iter == word_info_iter->second.amount_in_line.end())
+                                            ? 0
+                                            : amount_in_line_iter->second;
                 double tf = static_cast<double>(amount_in_line) / static_cast<double>(line_word_count_[i]);
-                double idf = std::log(static_cast<double>(total_lines) / static_cast<double>(word_info_iter->second.lines_count));
+                double idf = std::log(static_cast<double>(total_lines) /
+                                      static_cast<double>(word_info_iter->second.lines_count));
                 scored_lines[i].first += tf * idf;
             }
         }
