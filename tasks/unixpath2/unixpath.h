@@ -1,14 +1,13 @@
 #pragma once
 
 #include <deque>
-#include <iostream>
 #include <string>
 #include <string_view>
 #include <vector>
 
 class UnixPath {
 public:
-    explicit UnixPath(std::string_view initial_dir);
+    UnixPath(std::string_view initial_dir);
 
     void ChangeDirectory(std::string_view path);
 
@@ -16,6 +15,8 @@ public:
     std::string GetRelativePath() const;
 
 private:
-    std::deque<std::string_view> initial_dir_;
-    std::deque<std::string_view> current_dir_;
+    std::vector<std::string_view> init_deq_;
+    std::vector<std::string_view> deq_abspath_;
+    void Split(std::string_view str, std::vector<std::string_view>& result);
+    void Normalize(std::vector<std::string_view>& dirs) const;
 };
