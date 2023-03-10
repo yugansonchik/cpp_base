@@ -83,7 +83,7 @@ void Minesweeper::OpenCell(const Minesweeper::Cell& cell) {
 }
 
 void Minesweeper::MarkCell(const Minesweeper::Cell& cell) {
-    if (game_status_ != GameStatus::DEFEAT && game_status_!= GameStatus::VICTORY) {
+    if (game_status_ != GameStatus::DEFEAT && game_status_ != GameStatus::VICTORY) {
         auto [x, y] = cell;
         if (!field_[x][y].is_opened) {
             if (field_[x][y].is_flagged) {
