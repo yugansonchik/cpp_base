@@ -83,16 +83,18 @@ void Minesweeper::OpenCell(const Minesweeper::Cell& cell) {
 }
 
 void Minesweeper::MarkCell(const Minesweeper::Cell& cell) {
-    if (game_status_ != GameStatus::DEFEAT && game_status_ != GameStatus::VICTORY) {
-        auto [x, y] = cell;
-        if (!field_[x][y].is_opened) {
-            if (field_[x][y].is_flagged) {
-                field_[x][y].is_flagged = false;
-            } else {
-                field_[x][y].is_flagged = true;
-            }
-        }
+    if (game_status_ == GameStatus::NOT_STARTED) {
+        start_time_ = time(nullptr);
+        game_status_ = GameStatus::IN_PROGRESS;
     }
+    if (game_status_ == GameStatus::VICTORY || game_status_ == GameStatus::DEFEAT || field_[cell.y][cell.x].is_opened) {
+        return;
+    }
+    if (field_[cell.y][cell.x].is_flagged) {
+        field_[cell.y][cell.x].is_flagged = false;
+        return;
+    }
+    field_[cell.y][cell.x].is_flagged = true;
 }
 
 Minesweeper::GameStatus Minesweeper::GetGameStatus() const {
@@ -100,25 +102,19 @@ Minesweeper::GameStatus Minesweeper::GetGameStatus() const {
 }
 
 time_t Minesweeper::GetGameTime() const {
-    switch (game_status_) {
-        case GameStatus::NOT_STARTED:
-            return 0;
-            break;
-        case GameStatus::IN_PROGRESS:
-            return time(nullptr) - start_time_;
-            break;
-        case GameStatus::VICTORY:
-        case GameStatus::DEFEAT:
-            return end_time_ - start_time_;
-            break;
+    if (game_status_ == GameStatus::NOT_STARTED) {
+        return 0;
+    } else if (game_status_ == GameStatus::IN_PROGRESS) {
+        return time(nullptr) - start_time_;
+    } else {
+        return end_time_ - start_time_;
     }
-    return 0;
 }
 
 Minesweeper::RenderedField Minesweeper::RenderField() const {
     RenderedField rendered_field(height_, std::string(width_, '-'));
-    for (size_t i = 0; i < height_; ++i) {
-        for (size_t j = 0; j < width_; ++j) {
+    for (int i = 0; i < static_cast<int>(height_); ++i) {
+        for (int j = 0; j < static_cast<int>(width_); ++j) {
             if (field_[i][j].is_flagged) {
                 rendered_field[i][j] = '?';
                 continue;
@@ -131,7 +127,7 @@ Minesweeper::RenderedField Minesweeper::RenderField() const {
                     if (mines_around_count == 0) {
                         rendered_field[i][j] = '.';
                     } else {
-                        rendered_field[i][j] = static_cast<char>('0' + mines_around_count);
+                        rendered_field[i][j] = std::to_string(mines_around_count)[0];
                     }
                 }
                 continue;
