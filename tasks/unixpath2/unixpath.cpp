@@ -3,22 +3,22 @@
 #include <deque>
 
 UnixPath::UnixPath(std::string_view initial_dir) {
-    Split(initial_dir, init_deq_);
-    Normalize(init_deq_);
-    deq_abspath_ = init_deq_;
+    Split(initial_dir, initial_deq);
+    Normalize(initial_deq);
+    abs_deq = initial_deq;
 }
 
 void UnixPath::ChangeDirectory(std::string_view path) {
     if (path.starts_with("/")) {
-        deq_abspath_.clear();
+        abs_deq.clear();
     }
-    Split(path, deq_abspath_);
-    Normalize(deq_abspath_);
+    Split(path, abs_deq);
+    Normalize(abs_deq);
 }
 
 std::string UnixPath::GetAbsolutePath() const {
     std::string result;
-    for (const auto& dir : deq_abspath_) {
+    for (const auto& dir : abs_deq) {
         result += "/";
         result += dir;
     }
@@ -28,12 +28,12 @@ std::string UnixPath::GetAbsolutePath() const {
 std::string UnixPath::GetRelativePath() const {
     std::vector<std::string_view> rel_path;
     size_t last_eq_idx = -1;
-    for (size_t i = init_deq_.size(); i > 0; --i) {
-        if (i - 1 >= deq_abspath_.size()) {
+    for (size_t i = initial_deq.size(); i > 0; --i) {
+        if (i - 1 >= abs_deq.size()) {
             rel_path.push_back("..");
             continue;
         }
-        if (init_deq_[i - 1] == deq_abspath_[i - 1]) {
+        if (initial_deq[i - 1] == abs_deq[i - 1]) {
             if (rel_path.empty()) {
                 rel_path.push_back(".");
             }
@@ -44,8 +44,8 @@ std::string UnixPath::GetRelativePath() const {
             continue;
         }
     }
-    for (size_t i = last_eq_idx + 1; i < deq_abspath_.size(); ++i) {
-        rel_path.push_back(deq_abspath_[i]);
+    for (size_t i = last_eq_idx + 1; i < abs_deq.size(); ++i) {
+        rel_path.push_back(abs_deq[i]);
     }
     std::string result;
     for (const auto& dir : rel_path) {

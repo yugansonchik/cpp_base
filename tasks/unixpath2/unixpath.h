@@ -15,8 +15,8 @@ public:
     std::string GetRelativePath() const;
 
 private:
-    std::vector<std::string_view> init_deq_;
-    std::vector<std::string_view> deq_abspath_;
+    std::vector<std::string_view> initial_deq;
+    std::vector<std::string_view> abs_deq;
     void Split(std::string_view str, std::vector<std::string_view>& result);
     void Normalize(std::vector<std::string_view>& dirs) const;
 };
