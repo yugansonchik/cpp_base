@@ -1,234 +1,187 @@
 #include "minesweeper.h"
 
-#include <algorithm>
 #include <random>
-#include <tuple>
-#include <unordered_set>
-
-std::random_device rd;
-std::mt19937_64 rg(rd());
-
-void Minesweeper::ClearField() {
-    for (size_t i = 0; i < height_; ++i) {
-        delete[] field_[i];
-    }
-    if (height_) {
-        delete[] field_;
-    }
-}
-
-void Minesweeper::AllocateField() {
-    field_ = new CellInfo*[height_];
-    for (size_t i = 0; i < height_; ++i) {
-        field_[i] = new CellInfo[width_];
-        for (size_t j = 0; j < width_; ++j) {
-            field_[i][j].is_open = field_[i][j].is_marked = field_[i][j].is_mine = false;
-            field_[i][j].neighbour_mines = 0;
-        }
-    }
-}
-
-bool Minesweeper::CheckMove(size_t i, size_t j, int di, int dj) {
-    return !((i == 0 && di == -1) || (j == 0 && dj == -1) || (i == height_ - 1 && di == 1) ||
-             (j == width_ - 1 && dj == 1));
-}
-
-void Minesweeper::CountNeighbourMines() {
-    for (size_t i = 0; i < height_; ++i) {
-        for (size_t j = 0; j < width_; ++j) {
-            for (int di = -1; di <= 1; ++di) {
-                for (int dj = -1; dj <= 1; ++dj) {
-                    if (abs(di) + abs(dj) != 0 && CheckMove(i, j, di, dj)) {
-                        if (field_[i + di][j + dj].is_mine) {
-                            field_[i][j].neighbour_mines++;
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-void Minesweeper::ResetTimer() {
-    start_time = end_time = std::time(nullptr);
-}
 
 Minesweeper::Minesweeper(size_t width, size_t height, size_t mines_count) {
-    height_ = width_ = 0;  // initial
     NewGame(width, height, mines_count);
 }
 
 Minesweeper::Minesweeper(size_t width, size_t height, const std::vector<Cell>& cells_with_mines) {
-    height_ = width_ = 0;  // initial
     NewGame(width, height, cells_with_mines);
 }
 
-Minesweeper::~Minesweeper() {
-    ClearField();
-}
-
 void Minesweeper::NewGame(size_t width, size_t height, size_t mines_count) {
-    ClearField();
-    width_ = width;
-    height_ = height;
-    open_cells_ = 0;
+    FreeMemory();
+    game_status_ = GameStatus::NOT_STARTED;
     mines_count_ = mines_count;
+    opened_count_ = 0;
+    height_ = height;
+    width_ = width;
+    AllocateMemory();
 
-    bool* bombs = new bool[width * height];
-    for (size_t i = 0; i < mines_count; ++i) {
-        bombs[i] = true;
-    }
-    std::shuffle(bombs, bombs + width * height, rg);
-
-    AllocateField();
-    for (size_t i = 0; i < height_; ++i) {
-        for (size_t j = 0; j < width_; ++j) {
-            field_[i][j].is_mine = bombs[i * width + j];
-        }
-    }
-    CountNeighbourMines();
-
-    delete[] bombs;
-
-    is_game_started = true;
-    is_first_move_made = false;
-    ResetTimer();
+    SetMinesRandomly();
 }
 
 void Minesweeper::NewGame(size_t width, size_t height, const std::vector<Cell>& cells_with_mines) {
-    ClearField();
-    width_ = width;
-    height_ = height;
-    open_cells_ = 0;
+    FreeMemory();
+    game_status_ = GameStatus::NOT_STARTED;
     mines_count_ = cells_with_mines.size();
-
-    AllocateField();
-    for (const Cell cell : cells_with_mines) {
-        field_[cell.y][cell.x].is_mine = true;
-    }
-    CountNeighbourMines();
-
-    is_game_started = true;
-    is_first_move_made = false;
-    ResetTimer();
-}
-
-void Minesweeper::Defeat() {
-    is_game_started = is_first_move_made = false;
-    end_time = std::time(nullptr);
-    victory = false;
-    for (size_t i = 0; i < height_; ++i) {
-        for (size_t j = 0; j < width_; ++j) {
-            field_[i][j].is_open = true;
-        }
+    opened_count_ = 0;
+    height_ = height;
+    width_ = width;
+    AllocateMemory();
+    for (const auto& cell : cells_with_mines) {
+        field_[cell.y][cell.x].is_mined = true;
     }
 }
 
-void Minesweeper::Victory() {
-    is_game_started = is_first_move_made = false;
-    end_time = std::time(nullptr);
-    victory = true;
-}
-
-size_t Minesweeper::CellHash::operator()(const Cell obj) const {
-    return obj.x + 0x9e3779b9 + (obj.y << 6) + (obj.y >> 2);
-}
-
-bool Minesweeper::CellEqual::operator()(const Cell a, const Cell b) const {
-    return std::tie(a.x, a.y) == std::tie(b.x, b.y);
-}
-
-void Minesweeper::OpenCell(const Cell& cell) {
-    if (!is_game_started) {
+void Minesweeper::OpenCell(const Minesweeper::Cell& cell) {
+    if (game_status_ == GameStatus::NOT_STARTED) {
+        start_time_ = time(nullptr);
+        game_status_ = GameStatus::IN_PROGRESS;
+    }
+    if (field_[cell.y][cell.x].is_flagged || field_[cell.y][cell.x].is_opened) {
         return;
     }
-    if (!is_first_move_made) {
-        is_first_move_made = true;
-        ResetTimer();
-    }
-    if (field_[cell.y][cell.x].is_mine) {
-        Defeat();
+    if (game_status_ == GameStatus::VICTORY || game_status_ == GameStatus::DEFEAT) {
         return;
     }
-    std::unordered_set<Cell, CellHash, CellEqual> used_cells;
-    std::vector<Cell> cells_queue;
-    cells_queue.push_back(cell);
-    used_cells.emplace(cell);
-    while (!cells_queue.empty()) {
-        Cell cur = cells_queue.back();
-        cells_queue.pop_back();
-        field_[cur.y][cur.x].is_open = true;
-        open_cells_++;
-        if (open_cells_ + mines_count_ == width_ * height_) {
-            Victory();
-            return;
+    field_[cell.y][cell.x].is_opened = true;
+    ++opened_count_;
+    if (field_[cell.y][cell.x].is_mined) {
+        game_status_ = GameStatus::DEFEAT;
+        end_time_ = time(nullptr);
+        for (size_t i = 0; i < height_; ++i) {
+            for (size_t j = 0; j < width_; ++j) {
+                field_[i][j].is_opened = true;
+            }
         }
-        if (field_[cur.y][cur.x].neighbour_mines) {
-            continue;
-        }
-        for (int dy = -1; dy <= 1; ++dy) {
-            for (int dx = -1; dx <= 1; ++dx) {
-                if (abs(dx) + abs(dy) != 0 && CheckMove(cur.y, cur.x, dy, dx)) {
-                    if (!field_[cur.y + dy][cur.x + dx].is_mine && !field_[cur.y + dy][cur.x + dx].is_marked &&
-                        used_cells.find({cur.x + dx, cur.y + dy}) == used_cells.end()) {
+        return;
+    }
+    if (opened_count_ == width_ * height_ - mines_count_) {
+        game_status_ = GameStatus::VICTORY;
+        end_time_ = time(nullptr);
+        return;
+    }
 
-                        cells_queue.push_back({cur.x + dx, cur.y + dy});
-                        used_cells.insert({cur.x + dx, cur.y + dy});
+    if (!CountMines(cell.x, cell.y)) {
+        for (size_t k = cell.y; k <= cell.y + 2; ++k) {
+            for (size_t l = cell.x; l <= cell.x + 2; ++l) {
+                if (0 < k && k <= height_ && 0 < l && l <= width_) {
+                    if (!field_[k - 1][l - 1].is_opened) {
+                        cells_to_open_.push_back(Cell{.x = l - 1, .y = k - 1});
                     }
                 }
             }
         }
     }
+    while (!cells_to_open_.empty()) {
+        auto cur_cell = cells_to_open_.front();
+        cells_to_open_.pop_front();
+        OpenCell(cur_cell);
+    }
 }
 
-void Minesweeper::MarkCell(const Cell& cell) {
-    if (!is_game_started) {
-        return;
-    }
-    if (!is_first_move_made) {
-        is_first_move_made = true;
-        ResetTimer();
-    }
-    if (!field_[cell.y][cell.x].is_open) {
-        field_[cell.y][cell.x].is_marked = true;
+void Minesweeper::MarkCell(const Minesweeper::Cell& cell) {
+    if (game_status_ != GameStatus::DEFEAT && game_status_!= GameStatus::VICTORY) {
+        auto [x, y] = cell;
+        if (!field_[x][y].is_opened) {
+            if (field_[x][y].is_flagged) {
+                field_[x][y].is_flagged = false;
+            } else {
+                field_[x][y].is_flagged = true;
+            }
+        }
     }
 }
 
 Minesweeper::GameStatus Minesweeper::GetGameStatus() const {
-    if (is_game_started) {
-        return is_first_move_made ? GameStatus::IN_PROGRESS : GameStatus::NOT_STARTED;
-    }
-    return victory ? GameStatus::VICTORY : GameStatus::DEFEAT;
+    return game_status_;
 }
 
 time_t Minesweeper::GetGameTime() const {
-    if (is_game_started) {
-        return std::time(nullptr) - start_time;
+    switch (game_status_) {
+        case GameStatus::NOT_STARTED:
+            return 0;
+            break;
+        case GameStatus::IN_PROGRESS:
+            return time(nullptr) - start_time_;
+            break;
+        case GameStatus::VICTORY:
+        case GameStatus::DEFEAT:
+            return end_time_ - start_time_;
+            break;
     }
-
-    return end_time - start_time;
+    return 0;
 }
 
 Minesweeper::RenderedField Minesweeper::RenderField() const {
-    RenderedField result(height_);
+    RenderedField rendered_field(height_, std::string(width_, '-'));
     for (size_t i = 0; i < height_; ++i) {
         for (size_t j = 0; j < width_; ++j) {
-            char add;
-            if (!field_[i][j].is_open) {
-                if (field_[i][j].is_marked) {
-                    add = '?';
-                } else {
-                    add = '-';
-                }
-            } else {
-                if (field_[i][j].is_mine) {
-                    add = '*';
-                } else {
-                    add = field_[i][j].neighbour_mines ? '0' + field_[i][j].neighbour_mines : '.';
-                }
+            if (field_[i][j].is_flagged) {
+                rendered_field[i][j] = '?';
+                continue;
             }
-            result[i] += add;
+            if (field_[i][j].is_opened) {
+                if (field_[i][j].is_mined) {
+                    rendered_field[i][j] = '*';
+                } else {
+                    int mines_around_count = CountMines(j, i);
+                    if (mines_around_count == 0) {
+                        rendered_field[i][j] = '.';
+                    } else {
+                        rendered_field[i][j] = static_cast<char>('0' + mines_around_count);
+                    }
+                }
+                continue;
+            }
         }
     }
-    return result;
+    return rendered_field;
+}
+
+Minesweeper::~Minesweeper() {
+    FreeMemory();
+}
+
+int Minesweeper::CountMines(size_t x, size_t y) const {
+    int mines_around_count = 0;
+    for (size_t k = y; k <= y + 2; ++k) {
+        for (size_t l = x; l <= x + 2; ++l) {
+            if (0 < k && k <= height_ && 0 < l && l <= width_) {
+                mines_around_count += field_[k - 1][l - 1].is_mined;
+            }
+        }
+    }
+    return mines_around_count;
+}
+
+void Minesweeper::FreeMemory() {
+    for (size_t i = 0; i < height_; ++i) {
+        delete[] field_[i];
+    }
+    delete[] field_;
+}
+
+void Minesweeper::AllocateMemory() {
+    field_ = new CellData*[height_];
+    for (size_t i = 0; i < height_; ++i) {
+        field_[i] = new CellData[width_];
+    }
+}
+
+void Minesweeper::SetMinesRandomly() {
+    std::vector<Cell> indexes;
+    for (size_t i = 0; i < height_; ++i) {
+        for (size_t j = 0; j < width_; ++j) {
+            indexes.push_back(Cell{.x = j, .y = i});
+        }
+    }
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(indexes.begin(), indexes.end(), g);
+    for (size_t i = 0; i < mines_count_; ++i) {
+        field_[indexes[i].y][indexes[i].x].is_mined = true;
+    }
 }
