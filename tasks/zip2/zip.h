@@ -2,55 +2,48 @@
 
 #include <iterator>
 
-// Реализуем шаблонный класс Zipped, который позволяет итерироваться одновременно по двум различным последовательностям
-// и возвращать пары элементов, находящихся на одинаковых позициях.
-// Класс принимает два итератора на начало и конец первой последовательности и
-// два итератора на начало и конец второй последовательности.
-// Класс также содержит функцию Zip, которая принимает на вход две последовательности и
-// возвращает объект класса Zipped, созданный на основе этих последовательностей.
 
-template<typename Iterator1, typename Iterator2>
+template <typename Iterator1, typename Iterator2>
 class Zipped {
-public:
-    Zipped(Iterator1 begin1, Iterator1 end1, Iterator2 begin2, Iterator2 end2)
-        : begin1_(begin1), end1_(end1), begin2_(begin2), end2_(end2) {}
-
-    auto begin() const {
-        return Iterator(begin1_, end1_, begin2_);
-    }
-
-    auto end() const {
-        return Iterator(end1_, end1_, end2_);
-    }
-
 private:
-    Iterator1 begin1_, end1_;
-    Iterator2 begin2_, end2_;
+    struct ZippedIterator {
+        using iterator1 = typename std::iterator_traits<Iterator1>::value_type;
+        using iterator2 = typename std::iterator_traits<Iterator2>::value_type;
 
-    template<typename T1, typename T2>
-    class Iterator {
-    public:
-        Iterator(T1 i1, T1 end1, T2 i2) : i1_(i1), end1_(end1), i2_(i2) {}
+        std::pair<Iterator1, Iterator2> cur_;
 
-        bool operator!=(const Iterator& other) const {
-            return i1_ != other.i1_ && i2_ != other.i2_;
+        ZippedIterator(Iterator1 a, Iterator2 b) : cur_{a, b} {}
+
+        std::pair<iterator1, iterator2> operator*() {
+            return {*cur_.first, *cur_.second};
         }
 
-        auto operator*() const {
-            return std::pair(*i1_, *i2_);
-        }
-
-        Iterator& operator++() {
-            ++i1_;
-            ++i2_;
+        ZippedIterator& operator++() {
+            ++cur_.first;
+            ++cur_.second;
             return *this;
         }
 
-    private:
-        T1 i1_, end1_;
-        T2 i2_;
+        bool operator!=(const ZippedIterator& other) const {
+            return cur_.first != other.cur_.first && cur_.second != other.cur_.second;
+        }
     };
+
+    ZippedIterator beg_;
+    ZippedIterator end_;
+
+public:
+    Zipped(Iterator1 a_begin, Iterator1 a_end, Iterator2 b_begin, Iterator2 b_end) : beg_{a_begin, b_begin}, end_{a_end, b_end} {}
+
+    ZippedIterator begin() const {
+        return beg_;
+    }
+
+    ZippedIterator end() const {
+        return end_;
+    }
 };
+
 
 template <typename Sequence1, typename Sequence2>
 auto Zip(const Sequence1& sequence1, const Sequence2& sequence2) {
