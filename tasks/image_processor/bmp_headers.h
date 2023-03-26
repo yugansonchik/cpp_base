@@ -13,18 +13,17 @@ public:
 class DIBHeader { // https://en.wikipedia.org/wiki/BMP_file_format#Example_1
 public:
     uint32_t size;
-    int32_t width; // bmp could has width < 0
+    int32_t width;  // bmp could has width < 0
     int32_t height;
 
     uint16_t planes;
     uint16_t bits_per_pixel;
 
-    uint32_t compression; // should be 0 always
+    uint32_t compression;  // should be 0 always
     uint32_t resolution_horizontal;
     uint32_t resolution_vertical;
     uint32_t colors_in_palette;
     uint32_t important_colors;
-
 };
 
 class Color {

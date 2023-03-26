@@ -22,14 +22,14 @@ Parser::Parser(int argc, char* argv[]) {
 }
 
 void Parser::CheckFiles() {
-    try{
-        if (!ExistsFile(static_cast<std::string> (input_file_))) {
+    try {
+        if (!ExistsFile(static_cast<std::string>(input_file_))) {
             throw std::runtime_error("Input file does not exists!");
         }
-        if (ExistsFile(static_cast<std::string> (output_file_))) {
+        if (ExistsFile(static_cast<std::string>(output_file_))) {
             throw std::runtime_error("Output file already exists!");
         }
-        std::ofstream fout(static_cast<std::string> (output_file_));
+        std::ofstream fout(static_cast<std::string>(output_file_));
         if (!fout.good()) {
             throw std::runtime_error("Output file is unaccessible!");
         }
@@ -41,7 +41,7 @@ void Parser::CheckFiles() {
 }
 
 bool Parser::ExistsFile(const std::string name) const {
-    return ( access( name.c_str(), F_OK ) != -1 );
+    return (access( name.c_str(), F_OK ) != -1 );
 }
 
 std::string Parser::InputFile() {

@@ -10,7 +10,7 @@ class BMP {
 public:
     BMPHeader bmp_header;
     DIBHeader dib_header;
-    std::vector <std::vector <Color> > pixel_array;
+    std::vector<std::vector<Color> > pixel_array;
 
     BMP(const std::string& filename);
     void Read(const std::string& filename);
