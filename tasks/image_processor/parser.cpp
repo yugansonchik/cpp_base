@@ -1,57 +1,70 @@
-//
-// Created by ugans on 3/26/2023.
-//
-
 #include "parser.h"
-#include <unistd.h>
-#include <iostream>
-#include <fstream>
 
-Parser::Parser(int argc, char* argv[]) {
-    try {
-        for (int i = 1; i < argc; ++i) {
-            args_.push_back(argv[i]);
+
+bool IsInt(const std::string& str)
+{
+    for (char const &c : str) {
+        if (std::isdigit(c) == 0) {
+            return false;
         }
-        input_file_ = args_[0];
-        output_file_ = args_[1];
-    } catch (...) {
-        std::cout << "Invalid arguments!\n";
-        exit(0);
     }
-    CheckFiles();
+    return true;
 }
 
-void Parser::CheckFiles() {
-    try {
-        if (!ExistsFile(static_cast<std::string>(input_file_))) {
-            throw std::runtime_error("Input file does not exists!");
-        }
-        if (ExistsFile(static_cast<std::string>(output_file_))) {
-            throw std::runtime_error("Output file already exists!");
-        }
-        std::ofstream fout(static_cast<std::string>(output_file_));
-        if (!fout.good()) {
-            throw std::runtime_error("Output file is unaccessible!");
-        }
-        fout.close();
-    } catch (const std::exception& e) {
-        std::cerr << e.what();
-        exit(0);
+bool IsFloat(const std::string& str)
+{
+    char* ptr;
+    strtof(str.c_str(), &ptr);
+    return (*ptr) == '\0';
+}
+
+ParserResults ArgParser::Parse(int argc, const char *argv[]) {
+
+
+    if (argc == 1) {
+        throw std::invalid_argument("Please enter names of files to be read from and to be written to.");
+    } else if (argc == 2) {
+        throw std::invalid_argument("Please enter the name of file to be written to.");
     }
-}
 
-bool Parser::ExistsFile(const std::string name) const {
-    return (access( name.c_str(), F_OK ) != -1 );
-}
+    result.input_file_path = argv[1];
+    result.output_file_path = argv[2];
 
-std::string Parser::InputFile() {
-    return this->input_file_;
-}
+    FilterDefinition new_filter;
+    if (argc > 3) {
+        for (int i = 3; i != argc; ++i) {
+            if (filters.find(argv[i]) != filters.end() and i == 3) {
+                new_filter.name = argv[i];
+            } else if (filters.find(argv[i]) != filters.end()) {
+                result.filter_definitions.push_back(new_filter);
+                new_filter.Clear();
+                new_filter.name = argv[i];
+            } else if (!IsInt(argv[i]) and !IsFloat(argv[i])) {
+                throw std::invalid_argument(std::string("There is no such filter: ") +
+                                            argv[i] + ", please try again \n" + ENQUIRY);
+            } else {
+                new_filter.params.push_back(argv[i]);
+            }
+        }
+        result.filter_definitions.push_back(new_filter);
 
-std::string Parser::OutputFile() {
-    return this->output_file_;
-}
+        for (auto filter : result.filter_definitions) {
+            if (filters.at(filter.name) != filter.params.size()) {
+                throw std::invalid_argument(std::string("Impossible number of arguments for the filter: ")
+                                            + filter.name + ", please try again \n" + ENQUIRY);
+            }
+        }
 
-std::vector<std::string> Parser::GetArgs() {
-    return this->args_;
+        for (auto filter : result.filter_definitions) {
+            if (filter.name == "-crop") {
+                if (!IsInt(filter.params[0]) or !IsInt(filter.params[1])) {
+                    throw std::invalid_argument("Only integer arguments can be entered"
+                                                " for the filter -crop, please try again \n" + ENQUIRY);
+                }
+            }
+        }
+
+    }
+
+    return result;
 }
