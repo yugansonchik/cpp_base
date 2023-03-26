@@ -197,9 +197,9 @@ void GaussianBlur::ApplyFilter(std::vector <std::vector <Color> >& pixel_array) 
                     int delta_y = m_j - center;
                     int X = std::min(static_cast <int32_t> (pixel_array.size()) - 1, std::max(i + delta_x, 0));
                     int Y = std::min(static_cast <int32_t> (pixel_array[0].size()) - 1, std::max(j + delta_y, 0));
-                    res_r += static_cast <double> (image[X][Y].R) / 255.0 * matrix_[m_i][m_j];
-                    res_g += static_cast <double> (image[X][Y].G) / 255.0 * matrix_[m_i][m_j];
-                    res_b += static_cast <double> (image[X][Y].B) / 255.0 * matrix_[m_i][m_j];
+                    res_r += static_cast<double>(image[X][Y].R) / 255.0 * matrix_[m_i][m_j];
+                    res_g += static_cast<double>(image[X][Y].G) / 255.0 * matrix_[m_i][m_j];
+                    res_b += static_cast<double>(image[X][Y].B) / 255.0 * matrix_[m_i][m_j];
                     //std::cout << static_cast <double> (image[X][Y].R) << " : " << matrix_[m_i][m_j] << " " << static_cast <double> (image[X][Y].R) / 255.0 * matrix_[m_i][m_j] << "\n";
                 }
             }
