@@ -17,7 +17,4 @@ public:
     void Write(const std::string& filename);
 
     void ApplyFilter(const Filter& fl);
-
-private:
-
 };
