@@ -1,10 +1,3 @@
-//
-// Created by ugans on 3/26/2023.
-//
-
-#ifndef CPP_HSE_BMP_HEADERS_H
-#define CPP_HSE_BMP_HEADERS_H
-
 #include <stdint.h>
 #pragma once
 #pragma pack(push, 1)
