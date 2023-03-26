@@ -52,6 +52,6 @@ std::string Parser::OutputFile() {
     return this->output_file_;
 }
 
-std::vector <std::string> Parser::GetArgs() {
+std::vector<std::string> Parser::GetArgs() {
     return this->args_;
 }
